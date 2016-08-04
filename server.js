@@ -29,7 +29,35 @@ var EntryPoint = mongoose.model('EntryPoint',{
     secure:Boolean
 });
 
+
+var Password = mongoose.model('Password',{
+    pass:String
+});
 //routes
+
+
+app.get('/api/password/:pass',function(req,res){
+    
+    Password.find({pass:req.params.pass},function(err,password){
+        if (err)
+            res.send(err)
+            
+            res.json(password);
+    });
+});
+
+
+app.post('/api/password',function(req,res){
+    Password.create({pass:req.body.pass},function(err,password){
+        if (err)
+            res.send(err)
+            
+            res.json({message:'Password created'});
+    });
+    
+});
+
+
 
 app.get('/api/entrypoints', function(req,res){
     
