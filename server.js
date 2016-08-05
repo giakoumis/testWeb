@@ -101,6 +101,10 @@ app.put('/api/entrypoints/:name',function(req,res){
     
 })
 
+app.get('*',function(req,res){
+    res.sendFile(__dirname+ '/public/index.html');
+})
+
 //listen
 
 app.listen(3000);
