@@ -8,11 +8,33 @@ var bodyParser = require('body-parser');
 var morgan = require('morgan');
 var methodOverride = require('method-override');
 var app = express();
+var GPIO = require('onoff').Gpio,
+    led = new GPIO(24,'out');
+var door = new GPIO(23,'in','both');
 
+//Pi Setup
+
+//led.writeSync(1);
+
+function alarm(err,state){
+	if (state ==1) {
+	
+		led.writeSync(0);
+		console.log('The door is closed');
+	}else {
+		led.writeSync(1);
+		console.log('The door is open');
+	}
+
+
+}
+
+
+door.watch(alarm);
 
 //configuration
 
-mongoose.connect('mongodb://localhost/test');
+mongoose.connect('mongodb://localhost/HomeSecurity');
 
 app.use(express.static(__dirname + '/public'));
 app.use(morgan('dev'));
@@ -24,15 +46,9 @@ app.use(methodOverride());
 
 //define model
 
-var EntryPoint = mongoose.model('EntryPoint',{
-    name:String,
-    secure:Boolean
-});
+var EntryPoint = require('./models/entryPoint');
+var Password = require('./models/password');
 
-
-var Password = mongoose.model('Password',{
-    pass:String
-});
 //routes
 
 
@@ -42,7 +58,12 @@ app.get('/api/password/:pass',function(req,res){
         if (err)
             res.send(err)
             
-            res.json(password);
+            if(password[0]){
+            
+            led.writeSync(1);
+            
+            }
+            res.json(password[0]);
     });
 });
 
@@ -72,15 +93,16 @@ app.get('/api/entrypoints', function(req,res){
 });
 
 app.post('/api/entrypoints',function(req,res){
-    EntryPoint.create({
-        name:req.body.name,
-        secure:req.body.secure
-    },function(err, entrypoint){
-        
-        if (err)
-            res.send(err)
-            
-            res.json({message:'Entry Point created'});
+   var entryPoint= new EntryPoint();
+   	entryPoint.name = req.body.name;
+   	entryPoint.secure= req.body.secure;
+   
+   entryPoint.save(function(err){
+   	if (err)
+   		res.send(err);
+   		
+   		res.json({message: 'EntryPoint Created'});
+    
     });
 });
 
@@ -105,7 +127,30 @@ app.get('*',function(req,res){
     res.sendFile(__dirname+ '/public/index.html');
 })
 
+
+
+//setup closing
+
+process.on('SIGINT',function(){
+	console.log("\nGracefully shutting down");
+	
+	console.log("Realising the pi..." );
+	led.unexport();
+	door.unexport();
+	
+	process.exit();
+	
+	
+	
+});
+
+
+
 //listen
 
 app.listen(3000);
 console.log("App is listening on port 8080");
+
+
+
+
