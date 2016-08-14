@@ -11,6 +11,9 @@
     "mongoose"       : "^4.4.12",
     "morgan"         : "^1.1.1",
     "rpi-gpio"       : "^0.7.0",
-    "onoff"          : "^1.1.1"  			
+    "onoff"          : "^1.1.1",
+    "jpeg-js"  	     :"^0.2.0",
+    "node-webcam"    :"^0.3.1",
+    "fluent-ffmpeg"  :"^2.1.0"	
   }
 }
