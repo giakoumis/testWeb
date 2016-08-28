@@ -8,35 +8,22 @@ var bodyParser = require('body-parser');
 var morgan = require('morgan');
 var methodOverride = require('method-override');
 var app = express();
+var io = require('socket.io');
+var server=io.listen(4732);
+var android_socket = undefined;
+
 var GPIO = require('onoff').Gpio,
     led = new GPIO(24,'out');
 var door = new GPIO(23,'in','both');
 var arm_led = new GPIO(17,'out');
 var alarm_armed;
 
+
 //camera setup
-var NodeWebcam = require( "node-webcam" );
+
+var camera = require("./camera/camera"); 
  
- 
-//Default options 
- 
-var opts = {
- 
-    width: 1280,
- 
-    height: 720,
- 
-    delay: 0,
- 
-    quality: 100,
- 
-    output: "jpeg",
- 
-    verbose: true
- 
-}
- 
-var Webcam = NodeWebcam.create( opts );
+
  
 
 
@@ -58,12 +45,15 @@ function delayalarm(err,state){
 		console.log('The door is closed');
 	}else {
 		led.writeSync(1);
-		Webcam.capture( "test_picture" );
+		//Webcam.capture( "test_picture" );
+		camera.takePicture();
+		android_socket.emit('Alarm',{msg:'The alarm is triggered'});
 		console.log('The door is open');
 	}
 
 }
 	console.log('waited for password...');
+	
 	},10000);
  }	
 }
@@ -108,6 +98,7 @@ app.use(methodOverride());
 var EntryPoint = require('./models/entryPoint');
 var Password = require('./models/password');
 var AlarmStatus = require('./models/alarmStatus');
+var Log = require('./models/log');
 
 
 
@@ -131,6 +122,7 @@ function alarmTurnOn(){
 	    alarm_armed=true;
 	    arm_led.writeSync(1);
 	    console.log("Alarm is armed");
+	    
 	    });
 	    
 	    	
@@ -178,6 +170,28 @@ function setAlarmStatus(){
    
 
 }
+
+
+//websockets
+
+
+server.sockets.on('connection',function(socket){
+ 	console.log("Connection established");
+	socket.emit('helo',{msg:'welcome'});
+	android_socket = socket;
+	socket.on('user',function(data){
+		if(data.type == "client"){
+			android_socket = socket;
+		
+	   	}
+});
+
+
+	
+
+
+});
+
 
 
 //routes
